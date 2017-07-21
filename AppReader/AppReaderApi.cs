@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AppReader
+namespace Hausthy.AppReader
 {
     public static class Api
     {
