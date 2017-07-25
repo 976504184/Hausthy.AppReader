@@ -6,21 +6,19 @@ namespace Hausthy.AppReader.UnitTest
     {
         public static string apkPath = @"C:\Users\haiyang\Desktop\source-armeabi-debug.apk";
 
-        public static string ipaPath = @"C:\Users\haiyang\Desktop\DisplayLayout2.ipa";
+        public static string ipaPath = @"C:\Users\haiyang\Desktop\Ecm.ipa";
 
         [Fact]
         public void ReadApkInfo()
         {
-            var readerApi = new ApkReader();
-            var result = readerApi.ZipApk(apkPath);
+            var result = AppReaderApi.GetAppInfo(apkPath);
             Assert.NotNull(result);
         }
 
         [Fact]
         public void ReadIpaInfo()
         {
-            var readerApi = new IpaReader();
-            var result = readerApi.ZipIpa(ipaPath);
+            var result = AppReaderApi.GetAppInfo(ipaPath);
             Assert.NotNull(result);
         }
     }

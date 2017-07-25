@@ -4,9 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace Hausthy.AppReader
@@ -14,9 +11,11 @@ namespace Hausthy.AppReader
     public class IpaReader
     {
         private Dictionary<string, string> _keyValues = null;
+
         public IpaInfo ZipIpa(string apkPath)
         {
             byte[] resourcesData = null;
+            var plist = new Dictionary<string, object>();
             try
             {
                 using (var zip = new ZipInputStream(File.OpenRead(apkPath)))
@@ -31,7 +30,6 @@ namespace Hausthy.AppReader
 
                             if (item.Name.ToLower().Contains("info.plist"))
                             {
-                                var zipEntry = zipfile.GetEntry(item.Name);
                                 using (Stream strm = zipfile.GetInputStream(item))
                                 {
                                     using (MemoryStream mem = new MemoryStream())
@@ -57,16 +55,14 @@ namespace Hausthy.AppReader
                         }
                     }
                 }
-                Stream ms = new MemoryStream(resourcesData);
-                var docs = XDocument.Load(ms);
-                var keyValues = GetDictInDocument(docs);
+                plist = (Dictionary<string, object>)PlistCS.readPlist(resourcesData);
                 var ipaInfo = new IpaInfo
                 {
-                    Name = keyValues["CFBundleName"],
-                    DisplayName = keyValues["CFBundleDisplayName"],
-                    Identifier = keyValues["CFBundleIdentifier"],
-                    Version = keyValues["CFBundleVersion"],
-                    ShortVersionString = keyValues["CFBundleShortVersionString"]
+                    Name = plist["CFBundleName"].ToString(),
+                    DisplayName = plist["CFBundleDisplayName"].ToString(),
+                    Identifier = plist["CFBundleIdentifier"].ToString(),
+                    Version = plist["CFBundleVersion"].ToString(),
+                    ShortVersionString = plist["CFBundleShortVersionString"].ToString()
                 };
                 return ipaInfo;
             }

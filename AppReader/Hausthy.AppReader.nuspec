@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+    <projectUrl>https://github.com/hausthy/Hausthy.AppReader</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes>新增读取apk和ipa包的版本等信息.</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags>调用方式：AppReaderApi.GetAppInfo(appPath)</tags>
+  </metadata>
+</package>

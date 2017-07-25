@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Hausthy.AppReader
 {
-    public static class Api
+    public static class AppReaderApi
     {
         public static object GetAppInfo(string appPath)
         {
@@ -15,14 +15,16 @@ namespace Hausthy.AppReader
             var strExtension = FileUtil.GetFileExtension(appPath);
 
             if (strExtension.isNullOrEmpty()) return null;
-           
+
             switch (strExtension.ToLower())
             {
                 case ".apk":
-                    result = null;
+                    var readerApi = new ApkReader();
+                    result = readerApi.ZipApk(appPath);
                     break;
                 case ".ipa":
-                    result = null;
+                    var readerIpaApi = new IpaReader();
+                    result = readerIpaApi.ZipIpa(appPath);
                     break;
                 default:
                     break;

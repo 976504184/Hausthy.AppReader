@@ -1,4 +1,5 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
+﻿using Hausthy.AppReader.Utils;
+using ICSharpCode.SharpZipLib.Zip;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,6 +37,10 @@ namespace Hausthy.AppReader
                     ZipEntry item;
                     while ((item = zip.GetNextEntry()) != null)
                     {
+                        if (item.Name.isNullOrEmpty() && item.IsDirectory) continue;
+
+                        if (item.Name.ToLower() != "androidmanifest.xml" && item.Name.ToLower() != "resources.arsc") continue;
+
                         if (item.Name.ToLower() == "androidmanifest.xml")
                         {
                             manifestData = new byte[50 * 1024];
@@ -43,7 +48,6 @@ namespace Hausthy.AppReader
                             {
                                 strm.Read(manifestData, 0, manifestData.Length);
                             }
-
                         }
                         if (item.Name.ToLower() == "resources.arsc")
                         {
