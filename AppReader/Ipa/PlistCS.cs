@@ -33,7 +33,7 @@ using System.Xml;
 
 namespace Hausthy.AppReader
 {
-    public static class PlistCS
+    public static class PlistCs
     {
         private static List<int> offsetTable = new List<int>();
         private static List<byte> objectTable = new List<byte>();
@@ -48,7 +48,7 @@ namespace Hausthy.AppReader
         {
             using (FileStream f = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                return readPlist(f, plistType.Auto);
+                return readPlist(f, PlistType.Auto);
             }
         }
 
@@ -59,44 +59,43 @@ namespace Hausthy.AppReader
 
         public static object readPlist(byte[] data)
         {
-            return readPlist(new MemoryStream(data), plistType.Auto);
+            return readPlist(new MemoryStream(data), PlistType.Auto);
         }
 
-        public static plistType getPlistType(Stream stream)
+        public static PlistType getPlistType(Stream stream)
         {
             byte[] magicHeader = new byte[8];
             stream.Read(magicHeader, 0, 8);
 
             if (BitConverter.ToInt64(magicHeader, 0) == 3472403351741427810)
             {
-                return plistType.Binary;
+                return PlistType.Binary;
             }
             else
             {
-                return plistType.Xml;
+                return PlistType.Xml;
             }
         }
 
-        public static object readPlist(Stream stream, plistType type)
+        public static object readPlist(Stream stream, PlistType type)
         {
-            if (type == plistType.Auto)
+            if (type == PlistType.Auto)
             {
                 type = getPlistType(stream);
                 stream.Seek(0, SeekOrigin.Begin);
             }
 
-            if (type == plistType.Binary)
+            if (type == PlistType.Binary)
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                using (var reader = new BinaryReader(stream))
                 {
-                    byte[] data = reader.ReadBytes((int)reader.BaseStream.Length);
+                    var data = reader.ReadBytes((int)reader.BaseStream.Length);
                     return readBinary(data);
                 }
             }
             else
             {
-                XmlDocument xml = new XmlDocument();
-                xml.XmlResolver = null;
+                var xml = new XmlDocument { XmlResolver = null };
                 xml.Load(stream);
                 return readXml(xml);
             }
@@ -926,23 +925,23 @@ namespace Hausthy.AppReader
         #endregion
     }
 
-    public enum plistType
+    public enum PlistType
     {
         Auto, Binary, Xml
     }
 
     public static class PlistDateConverter
     {
-        public static long timeDifference = 978307200;
+        public static long TimeDifference = 978307200;
 
         public static long GetAppleTime(long unixTime)
         {
-            return unixTime - timeDifference;
+            return unixTime - TimeDifference;
         }
 
         public static long GetUnixTime(long appleTime)
         {
-            return appleTime + timeDifference;
+            return appleTime + TimeDifference;
         }
 
         public static DateTime ConvertFromAppleTimeStamp(double timestamp)

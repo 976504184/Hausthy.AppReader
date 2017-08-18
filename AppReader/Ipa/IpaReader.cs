@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Newtonsoft.Json;
 
 namespace Hausthy.AppReader
 {
@@ -15,7 +16,6 @@ namespace Hausthy.AppReader
         public IpaInfo ZipIpa(string apkPath)
         {
             byte[] resourcesData = null;
-            var plist = new Dictionary<string, object>();
             try
             {
                 using (var zip = new ZipInputStream(File.OpenRead(apkPath)))
@@ -28,41 +28,41 @@ namespace Hausthy.AppReader
                         {
                             if (item.Name.isNullOrEmpty() && item.IsDirectory) continue;
 
-                            if (item.Name.ToLower().Contains("info.plist"))
+                            if (!item.Name.ToLower().Contains("info.plist")) continue;
+                            ;
+
+                            using (var strm = zipfile.GetInputStream(item))
                             {
-                                using (Stream strm = zipfile.GetInputStream(item))
+                                using (var mem = new MemoryStream())
                                 {
-                                    using (MemoryStream mem = new MemoryStream())
+                                    while (true)
                                     {
-                                        int size = 0;
-                                        while (true)
+                                        var buffer = new byte[4096];
+                                        var size = strm.Read(buffer, 0, buffer.Length);
+                                        if (size > 0)
                                         {
-                                            byte[] buffer = new byte[4096];
-                                            size = strm.Read(buffer, 0, buffer.Length);
-                                            if (size > 0)
-                                            {
-                                                mem.Write(buffer, 0, size);
-                                            }
-                                            else
-                                            {
-                                                break;
-                                            }
+                                            mem.Write(buffer, 0, size);
                                         }
-                                        resourcesData = mem.ToArray();
+                                        else
+                                        {
+                                            break;
+                                        }
                                     }
+                                    resourcesData = mem.ToArray();
                                 }
                             }
                         }
                     }
                 }
-                plist = (Dictionary<string, object>)PlistCS.readPlist(resourcesData);
+                var plist = (Dictionary<string, object>)PlistCs.readPlist(resourcesData);
+                var t = JsonConvert.SerializeObject(plist);
                 var ipaInfo = new IpaInfo
                 {
-                    Name = plist["CFBundleName"].ToString(),
-                    DisplayName = plist["CFBundleDisplayName"].ToString(),
-                    Identifier = plist["CFBundleIdentifier"].ToString(),
-                    Version = plist["CFBundleVersion"].ToString(),
-                    ShortVersionString = plist["CFBundleShortVersionString"].ToString()
+                    Name = GetDictionaryValue<string>(plist, "CFBundleName"),
+                    DisplayName = GetDictionaryValue<string>(plist, "CFBundleDisplayName"),
+                    Identifier = GetDictionaryValue<string>(plist, "CFBundleIdentifier"),
+                    Version = GetDictionaryValue<string>(plist, "CFBundleVersion"),
+                    ShortVersionString = GetDictionaryValue<string>(plist, "CFBundleShortVersionString")
                 };
                 return ipaInfo;
             }
@@ -72,16 +72,11 @@ namespace Hausthy.AppReader
             }
         }
 
-        private Dictionary<string, string> GetDictInDocument(XDocument docs)
+        private static T GetDictionaryValue<T>(IReadOnlyDictionary<string, object> dictionary, string key)
         {
-            if (_keyValues.isEmpty())
-            {
-                var keyValues = docs.Descendants("dict")
-                .SelectMany(d => d.Elements("key").Zip(d.Elements().Where(e => e.Name != "key"), (k, v) => new { Key = k, Value = v }))
-                .ToDictionary(i => i.Key.Value, i => i.Value.Value);
-                _keyValues = keyValues;
-            }
-            return _keyValues;
+            if (dictionary == null || !dictionary.ContainsKey(key)) return default(T);
+            object obj;
+            return dictionary.TryGetValue(key, out obj) ? (T)obj : default(T);
         }
     }
 }

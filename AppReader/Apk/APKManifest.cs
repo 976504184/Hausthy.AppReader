@@ -11,11 +11,11 @@ namespace Hausthy.AppReader
         private string result = "";
         // decompressXML -- Parse the 'compressed' binary form of Android XML docs 
         // such as for AndroidManifest.xml in .apk files
-        public static int startDocTag = 0x00100100;
-        public static int endDocTag = 0x00100101;
-        public static int startTag = 0x00100102;
-        public static int endTag = 0x00100103;
-        public static int textTag = 0x00100104;
+        public static int StartDocTag = 0x00100100;
+        public static int EndDocTag = 0x00100101;
+        public static int StartTag = 0x00100102;
+        public static int EndTag = 0x00100103;
+        public static int TextTag = 0x00100104;
 
         public string ReadManifestFileIntoXml(byte[] manifestFileData)
         {
@@ -28,7 +28,7 @@ namespace Hausthy.AppReader
             //   4th word is: Number of strings in string table
             // WARNING: Sometime I indiscriminently display or refer to word in 
             //   little endian storage format, or in integer format (ie MSB first).
-            int numbStrings = LEW(manifestFileData, 4 * 4);
+            int numbStrings = Lew(manifestFileData, 4 * 4);
 
             // StringIndexTable starts at offset 24x, an array of 32 bit LE offsets
             // of the length/string data in the StringTable.
@@ -41,11 +41,11 @@ namespace Hausthy.AppReader
             // XMLTags, The XML tag tree starts after some unknown content after the
             // StringTable.  There is some unknown data after the StringTable, scan
             // forward from this point to the flag for the start of an XML start tag.
-            int xmlTagOff = LEW(manifestFileData, 3 * 4);  // Start from the offset in the 3rd word.
+            int xmlTagOff = Lew(manifestFileData, 3 * 4);  // Start from the offset in the 3rd word.
             // Scan forward until we find the bytes: 0x02011000(x00100102 in normal int)
             for (int ii = xmlTagOff; ii < manifestFileData.Length - 4; ii += 4)
             {
-                if (LEW(manifestFileData, ii) == startTag)
+                if (Lew(manifestFileData, ii) == StartTag)
                 {
                     xmlTagOff = ii; break;
                 }
@@ -89,20 +89,20 @@ namespace Hausthy.AppReader
             int startDocTagCounter = 1;
             while (off < manifestFileData.Length)
             {
-                int tag0 = LEW(manifestFileData, off);
+                int tag0 = Lew(manifestFileData, off);
                 //int tag1 = LEW(manifestFileData, off+1*4);
-                int lineNo = LEW(manifestFileData, off + 2 * 4);
+                int lineNo = Lew(manifestFileData, off + 2 * 4);
                 //int tag3 = LEW(manifestFileData, off+3*4);
-                int nameNsSi = LEW(manifestFileData, off + 4 * 4);
-                int nameSi = LEW(manifestFileData, off + 5 * 4);
+                int nameNsSi = Lew(manifestFileData, off + 4 * 4);
+                int nameSi = Lew(manifestFileData, off + 5 * 4);
 
-                if (tag0 == startTag)
+                if (tag0 == StartTag)
                 { // XML START TAG
-                    int tag6 = LEW(manifestFileData, off + 6 * 4);  // Expected to be 14001400
-                    int numbAttrs = LEW(manifestFileData, off + 7 * 4);  // Number of Attributes to follow
+                    int tag6 = Lew(manifestFileData, off + 6 * 4);  // Expected to be 14001400
+                    int numbAttrs = Lew(manifestFileData, off + 7 * 4);  // Number of Attributes to follow
                     //int tag8 = LEW(manifestFileData, off+8*4);  // Expected to be 00000000
                     off += 9 * 4;  // Skip over 6+3 words of startTag data
-                    string name = compXmlString(manifestFileData, sitOff, stOff, nameSi);
+                    string name = CompXmlString(manifestFileData, sitOff, stOff, nameSi);
                     //tr.addSelect(name, null);
                     startTagLineNo = lineNo;
 
@@ -111,48 +111,48 @@ namespace Hausthy.AppReader
                     string sb = "";
                     for (int ii = 0; ii < numbAttrs; ii++)
                     {
-                        int attrNameNsSi = LEW(manifestFileData, off);  // AttrName Namespace Str Ind, or FFFFFFFF
-                        int attrNameSi = LEW(manifestFileData, off + 1 * 4);  // AttrName string Index
-                        int attrValueSi = LEW(manifestFileData, off + 2 * 4); // AttrValue Str Ind, or FFFFFFFF
-                        int attrFlags = LEW(manifestFileData, off + 3 * 4);
-                        int attrResId = LEW(manifestFileData, off + 4 * 4);  // AttrValue ResourceId or dup AttrValue StrInd
+                        int attrNameNsSi = Lew(manifestFileData, off);  // AttrName Namespace Str Ind, or FFFFFFFF
+                        int attrNameSi = Lew(manifestFileData, off + 1 * 4);  // AttrName string Index
+                        int attrValueSi = Lew(manifestFileData, off + 2 * 4); // AttrValue Str Ind, or FFFFFFFF
+                        int attrFlags = Lew(manifestFileData, off + 3 * 4);
+                        int attrResId = Lew(manifestFileData, off + 4 * 4);  // AttrValue ResourceId or dup AttrValue StrInd
                         off += 5 * 4;  // Skip over the 5 words of an attribute
 
-                        string attrName = compXmlString(manifestFileData, sitOff, stOff, attrNameSi);
+                        string attrName = CompXmlString(manifestFileData, sitOff, stOff, attrNameSi);
                         string attrValue = attrValueSi != -1
-                          ? compXmlString(manifestFileData, sitOff, stOff, attrValueSi)
+                          ? CompXmlString(manifestFileData, sitOff, stOff, attrValueSi)
                           : /*"resourceID 0x" + */attrResId.ToString();
                         sb += " " + attrName + "=\"" + attrValue + "\"";
                         //tr.add(attrName, attrValue);
                     }
-                    prtIndent(indent, "<" + name + sb + ">");
+                    PrtIndent(indent, "<" + name + sb + ">");
                     indent++;
                 }
-                else if (tag0 == endTag)
+                else if (tag0 == EndTag)
                 { // XML END TAG
                     indent--;
                     off += 6 * 4;  // Skip over 6 words of endTag data
-                    string name = compXmlString(manifestFileData, sitOff, stOff, nameSi);
-                    prtIndent(indent, "</" + name + ">  \r\n"/*+"(line " + startTagLineNo + "-" + lineNo + ")"*/);
+                    string name = CompXmlString(manifestFileData, sitOff, stOff, nameSi);
+                    PrtIndent(indent, "</" + name + ">  \r\n"/*+"(line " + startTagLineNo + "-" + lineNo + ")"*/);
                     //tr.parent();  // Step back up the NobTree
 
                 }
-                else if (tag0 == startDocTag)
+                else if (tag0 == StartDocTag)
                 {
                     startDocTagCounter++;
                     off += 4;
                 }
-                else if (tag0 == endDocTag)
+                else if (tag0 == EndDocTag)
                 {  // END OF XML DOC TAG
                     startDocTagCounter--;
                     if (startDocTagCounter == 0)
                         break;
                 }
-                else if (tag0 == textTag) { 
+                else if (tag0 == TextTag) { 
                     // code "copied" https://github.com/mikandi/php-apk-parser/blob/fixed-mikandi-version/lib/ApkParser/XmlParser.php
                     uint sentinal = 0xffffffff;
                     while (off < manifestFileData.Length) {
-                        uint curr = (uint)LEW(manifestFileData, off);
+                        uint curr = (uint)Lew(manifestFileData, off);
                         off += 4;
                         if (off > manifestFileData.Length) {
                             throw new Exception("Sentinal not found before end of file");
@@ -164,7 +164,7 @@ namespace Hausthy.AppReader
                         }                            
                     }
                 } else {
-                    prt("  Unrecognized tag code '" + tag0.ToString("X")
+                    Prt("  Unrecognized tag code '" + tag0.ToString("X")
                       + "' at offset " + off);
                     break;
                 }
@@ -175,20 +175,20 @@ namespace Hausthy.AppReader
             return result;
         } // end of decompressXML
 
-        public string compXmlString(byte[] xml, int sitOff, int stOff, int strInd)
+        public string CompXmlString(byte[] xml, int sitOff, int stOff, int strInd)
         {
             if (strInd < 0) return null;
-            int strOff = stOff + LEW(xml, sitOff + strInd * 4);
-            return compXmlStringAt(xml, strOff);
+            int strOff = stOff + Lew(xml, sitOff + strInd * 4);
+            return CompXmlStringAt(xml, strOff);
         }
 
-        public static string spaces = "                                             ";
-        public void prtIndent(int indent, string str)
+        public static string Spaces = "                                             ";
+        public void PrtIndent(int indent, string str)
         {
-            prt(spaces.Substring(0, Math.Min(indent * 2, spaces.Length)) + str);
+            Prt(Spaces.Substring(0, Math.Min(indent * 2, Spaces.Length)) + str);
         }
 
-        private void prt(string p)
+        private void Prt(string p)
         {
             result += p;
         }
@@ -196,7 +196,7 @@ namespace Hausthy.AppReader
         // compXmlStringAt -- Return the string stored in StringTable format at
         // offset strOff.  This offset points to the 16 bit string length, which 
         // is followed by that number of 16 bit (Unicode) chars.
-        public string compXmlStringAt(byte[] arr, int strOff)
+        public string CompXmlStringAt(byte[] arr, int strOff)
         {
             int strLen = arr[strOff + 1] << 8 & 0xff00 | arr[strOff] & 0xff;
             byte[] chars = new byte[strLen];
@@ -211,7 +211,7 @@ namespace Hausthy.AppReader
 
         // LEW -- Return value of a Little Endian 32 bit word from the byte array
         //   at offset off.
-        public int LEW(byte[] arr, int off)
+        public int Lew(byte[] arr, int off)
         {
             //return (int)(arr[off + 3] << 24 & 0xff000000 | arr[off + 2] << 16 & 0xff0000 | arr[off + 1] << 8 & 0xff00 | arr[off] & 0xFF);
             return (int)(((uint)arr[off + 3]) << 24 & 0xff000000 | ((uint)arr[off + 2]) << 16 & 0xff0000 | ((uint)arr[off + 1]) << 8 & 0xff00 | ((uint)arr[off]) & 0xFF);
